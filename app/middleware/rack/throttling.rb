@@ -11,7 +11,7 @@ module Rack
         SimpleThrottler.throttle_for(req)
         if SimpleThrottler.exceed_limit?(req)
           message = "Rate limit exceeded. Try again in #{SimpleThrottler.expires_in(req)} seconds"
-          [429, { 'Content-Type' => 'text/html', 'Content-Length' => message.size.to_s}, [message]]
+          [429, { 'Content-Type' => 'text/html', 'Content-Length' => message.size.to_s }, [message]]
         else
           normal_response(env)
         end

@@ -17,9 +17,7 @@ class SimpleThrottler
 
   class << self
     def configure(&block)
-      if block_given?
-        class_eval(&block)
-      end
+      class_eval(&block) if block_given?
     end
 
     def throttle(endpoint, opts)
@@ -31,33 +29,29 @@ class SimpleThrottler
     end
 
     def throttle_for(req)
-      period = (instance.data[req.path][:period] || instance.default_period).to_i
-      epoch_time = Time.current.to_i
-      expires_in = (period - (epoch_time % period) + 1)
-      key = "req/ip:#{req.ip}:#{(epoch_time / period)}"
-
+      key, expires_in = key_and_expires_in(req)
       result = instance.cache_store.increment(key, 1, expires_in: expires_in)
-
-      if result.nil?
-        instance.cache_store.write(key, 1, expires_in: expires_in)
-      end
-
+      instance.cache_store.write(key, 1, expires_in: expires_in) if result.nil?
       result || 1
     end
 
     def exceed_limit?(req)
-      period = (instance.data[req.path][:period] || instance.default_period).to_i
-      epoch_time = Time.current.to_i
-      key = "req/ip:#{req.ip}:#{(epoch_time / period)}"
+      key, = key_and_expires_in(req)
       count = instance.cache_store.read(key).to_i
       count > instance.data[req.path][:limit].to_i
     end
 
     def expires_in(req)
+      _, expires_in = key_and_expires_in(req)
+      expires_in
+    end
+
+    def key_and_expires_in(req)
       period = (instance.data[req.path][:period] || instance.default_period).to_i
       epoch_time = Time.current.to_i
       expires_in = (period - (epoch_time % period) + 1)
-      expires_in
+      key = "req/ip:#{req.ip}:#{(epoch_time / period)}"
+      [key, expires_in]
     end
   end
 end

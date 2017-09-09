@@ -55,5 +55,4 @@ RSpec.describe HomeController do
       end
     end
   end
-
 end

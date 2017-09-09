@@ -6,7 +6,7 @@ module Rack
 
     def call(env)
       req = Request.new(env)
-      
+
       if SimpleThrottler.endpoints.include?(req.path)
         SimpleThrottler.throttle_for(req)
         if SimpleThrottler.exceed_limit?(req)
